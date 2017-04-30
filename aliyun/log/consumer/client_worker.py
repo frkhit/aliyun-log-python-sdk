@@ -26,37 +26,57 @@ class ClientWorker(Thread):
         self.shard_consumer = {}
 
         try:
-            self.loghub_client_adapter.create_consumer_grouop(loghub_config.heartbeat_interval, loghub_config.in_order)
+            self.loghub_client_adapter.create_consumer_group(loghub_config.heartbeat_interval, loghub_config.in_order)
         except LogException as e:
             # consumer group already exist
             if e.get_error_code() == 'ConsumerGroupAlreadyExist':
-                try:
-                    consumer_group = self.loghub_client_adapter.get_consumer_group()
-                    # consumer group is not in server
-                    if consumer_group is None:
-                        raise LogHubClientWorkerException('consumer group not exist')
-                    # the consumer group's attribute(in_order or timeout) is different from the server's
-                    if consumer_group is not None and (consumer_group.is_in_order() != loghub_config.in_order
-                                                       or consumer_group.get_timeout() != loghub_config.heartbeat_interval):
-                        raise LogHubClientWorkerException(
-                            "consumer group is not agreed, AlreadyExistedConsumerGroup: {\"consumeInOrder\": " +
-                            str(consumer_group.is_in_order()) + ", \"timeoutInMillSecond\": " +
-                            str(consumer_group.get_timeout()) + "}")
-                except LogException as e1:
-                    raise LogHubClientWorkerException("error occour when get consumer group, errorCode: " +
-                                                      e1.get_error_code() + ", errorMessage: " + e1.get_error_message())
-
+                self._consumer_group_exists()
             else:
                 raise LogHubClientWorkerException('error occour when create consumer group, errorCode: '
                                                   + e.get_error_code() + ", errorMessage: " + e.get_error_message())
 
         self.loghub_heart_beat = LoghubHeartBeat(self.loghub_client_adapter, loghub_config.heartbeat_interval)
 
+    def _consumer_group_exists(self):
+        try:
+            consumer_group = self.loghub_client_adapter.get_consumer_group()
+            # consumer group is not in server
+            if consumer_group is None:
+                raise LogHubClientWorkerException('consumer group not exist')
+
+            if consumer_group is not None:
+                if consumer_group.is_in_order() != self.loghub_config.in_order \
+                        or consumer_group.get_timeout() != self.loghub_config.heartbeat_interval:
+                    # the consumer group's attribute(in_order or timeout) is different from the server's
+                    self._consumer_group_is_different(consumer_group=consumer_group)
+                else:
+                    pass
+        except LogException as e1:
+            raise LogHubClientWorkerException("error occour when get consumer group, errorCode: " +
+                                              e1.get_error_code() + ", errorMessage: " + e1.get_error_message())
+
+    def _consumer_group_is_different(self, consumer_group):
+        if self.loghub_config.can_update_consumer_group:
+            self.logger.warn("consumer group " + self.loghub_config.consumer_group_name
+                             + " is not agreed, AlreadyExistedConsumerGroup: (\"consumeInOrder\": "
+                             + str(self.loghub_config.in_order) + ", \"timeoutInSecond\": "
+                             + str(self.loghub_config.heartbeat_interval) + " )")
+
+            self.logger.info("updating consumer group  (%s) ..." % self.loghub_config.consumer_group_name)
+            self.loghub_client_adapter.update_consumer_group(timeout=self.loghub_config.heartbeat_interval,
+                                                             in_order=self.loghub_config.in_order)
+            self.logger.info("updated consumer group  (%s) ..." % self.loghub_config.consumer_group_name)
+        else:
+            raise LogHubClientWorkerException(
+                "consumer group is not agreed, AlreadyExistedConsumerGroup: {\"consumeInOrder\": " +
+                str(consumer_group.is_in_order()) + ", \"timeoutInMillSecond\": " +
+                str(consumer_group.get_timeout()) + "}")
+
     def switch_client(self, accessKeyId, accessKey, securityToken=None):
         self.loghub_client_adapter.switch_client(self.loghub_config.endpoint, accessKeyId, accessKey, securityToken)
 
     def run(self):
-        logging.debug('worker start')
+        self.logger.debug('worker start')
         self.loghub_heart_beat.start()
         while not self.shut_down_flag:
             held_shards = self.loghub_heart_beat.get_held_shards()
@@ -87,7 +107,7 @@ class ClientWorker(Thread):
     def shutdown(self):
         self.shut_down_flag = True
         self.loghub_heart_beat.shutdown()
-        logging.debug('worker stop')
+        self.logger.debug('worker stop')
 
     def _get_consumer(self, shard_id):
         consumer = self.shard_consumer.get(shard_id, None)

@@ -20,7 +20,7 @@ class LoghubConfig(object):
     def __init__(self, endpoint, accessKeyId, accessKey, project, logstore,
                  consumer_group_name, consumer_name,
                  cursor_position, heartbeat_interval=20, data_fetch_interval=2, in_order=False,
-                 cursor_start_time=-1, securityToken=None):
+                 cursor_start_time=-1, securityToken=None, can_update_consumer_group=False):
         self.endpoint = endpoint
         self.accessKeyId = accessKeyId
         self.accessKey = accessKey
@@ -34,3 +34,4 @@ class LoghubConfig(object):
         self.in_order = in_order
         self.cursor_start_time = cursor_start_time
         self.securityToken = securityToken
+        self.can_update_consumer_group = can_update_consumer_group

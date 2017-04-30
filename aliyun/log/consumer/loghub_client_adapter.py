@@ -25,10 +25,19 @@ class LogHubClientAdapter(object):
         self.mclient = LogConsumerClient(endpoint, accessKeyId, accessKey, securityToken)
         self.rw_lock.writer_lock.release()
 
-    def create_consumer_grouop(self, timeout, in_order):
+    def create_consumer_group(self, timeout, in_order):
         self.rw_lock.reader_lock.acquire()
         try:
-            self.mclient.create_consumer_group(self.mproject, self.mlogstore, self.mconsumer_group, timeout, in_order)
+            self.mclient.create_consumer_group(self.mproject, self.mlogstore, self.mconsumer_group, timeout=timeout,
+                                               in_order=in_order)
+        finally:
+            self.rw_lock.reader_lock.release()
+
+    def update_consumer_group(self, timeout, in_order):
+        self.rw_lock.reader_lock.acquire()
+        try:
+            self.mclient.update_consumer_group(self.mproject, self.mlogstore, self.mconsumer_group, in_order=in_order,
+                                               timeout=timeout)
         finally:
             self.rw_lock.reader_lock.release()
 
