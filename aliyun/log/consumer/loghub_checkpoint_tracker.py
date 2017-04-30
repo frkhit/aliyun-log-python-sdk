@@ -2,13 +2,11 @@
 
 import time
 
-from aliyun.log.logexception import LogException
-
 from aliyun.log.consumer.loghub_exceptions.loghub_check_point_exception import LogHubCheckPointException
+from aliyun.log.logexception import LogException
 
 
 class LoghubCheckpointTracker(object):
-
     def __init__(self, loghub_client_adapter, consumer_name, shard_id):
         self.loghub_client_adapter = loghub_client_adapter
         self.consumer_name = consumer_name
@@ -45,8 +43,11 @@ class LoghubCheckpointTracker(object):
                 self.loghub_client_adapter.update_check_point(self.shard_id, self.consumer_name, self.temp_check_point)
                 self.last_persistent_checkpoint = self.temp_check_point
             except LogException, e:
-                raise LogHubCheckPointException("Failed to persistent the cursor to outside system, " +
-                                                self.consumer_name + ", " + int(self.shard_id) + ", " + self.temp_check_point, e)
+                raise LogHubCheckPointException("Failed to persistent the cursor to outside system, "
+                                                + self.consumer_name + ", "
+                                                + str(self.shard_id) + ", "
+                                                + self.temp_check_point,
+                                                e)
 
     def flush_check(self):
         current_time = time.time()
@@ -59,4 +60,3 @@ class LoghubCheckpointTracker(object):
 
     def get_check_point(self):
         return self.temp_check_point
-

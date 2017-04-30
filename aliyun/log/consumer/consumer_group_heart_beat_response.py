@@ -4,7 +4,6 @@ from aliyun.log.logresponse import LogResponse
 
 
 class ConsumerGroupHeartBeatResponse(LogResponse):
-
     def __init__(self, resp, headers):
         LogResponse.__init__(self, headers)
         self.shards = resp
@@ -19,4 +18,3 @@ class ConsumerGroupHeartBeatResponse(LogResponse):
         print 'ListHeartBeat:'
         print 'headers:', self.get_all_headers()
         print 'shards:', self.shards
-

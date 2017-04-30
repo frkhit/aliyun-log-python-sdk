@@ -6,7 +6,6 @@ from aliyun.log.consumer.consumer_group_request import ConsumerGroupRequest
 
 
 class ConsumerGroupUpdateCheckPointRequest(ConsumerGroupRequest):
-
     def __init__(self, project, logstore, consumer_group, consumer, shard, check_point, force_success=True):
         ConsumerGroupRequest.__init__(self, project, logstore)
         self.consumer_group = consumer_group

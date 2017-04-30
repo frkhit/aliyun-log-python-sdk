@@ -4,7 +4,6 @@ from aliyun.log.logrequest import LogRequest
 
 
 class ConsumerGroupRequest(LogRequest):
-
     def __init__(self, project, logstore):
         LogRequest.__init__(self, project)
         # super(ConsumerGroupRequest, self).__init__(project)
@@ -15,4 +14,3 @@ class ConsumerGroupRequest(LogRequest):
 
     def set_logstore(self, logstore):
         self.logstore = logstore
-

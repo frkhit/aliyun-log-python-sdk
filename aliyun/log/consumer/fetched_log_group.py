@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -×-
 
-from aliyun.log.log_logs_pb2 import LogGroup
-from aliyun.log.log_logs_pb2 import LogGroupList
-
 
 class FetchedLogGroup(object):
-
     def __init__(self, shard_id, log_group_list, end_cursor):
         self._shard_id = shard_id
         self._fetched_log_group_list = log_group_list

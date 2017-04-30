@@ -6,7 +6,7 @@ import time
 from threading import Thread
 
 from aliyun.log.consumer.loghub_client_adapter import LogHubClientAdapter
-from aliyun.log.consumer.loghub_consumer import LoghubConsuemr
+from aliyun.log.consumer.loghub_consumer import LoghubConsumer
 from aliyun.log.consumer.loghub_exceptions.loghub_client_worker_exception import LogHubClientWorkerException
 from aliyun.log.consumer.loghub_heart_beat import LoghubHeartBeat
 from aliyun.log.logexception import LogException
@@ -27,17 +27,15 @@ class ClientWorker(Thread):
 
         try:
             self.loghub_client_adapter.create_consumer_grouop(loghub_config.heartbeat_interval, loghub_config.in_order)
-
         except LogException as e:
             # consumer group already exist
             if e.get_error_code() == 'ConsumerGroupAlreadyExist':
-
                 try:
                     consumer_group = self.loghub_client_adapter.get_consumer_group()
                     # consumer group is not in server
                     if consumer_group is None:
                         raise LogHubClientWorkerException('consumer group not exist')
-                    # the consuemr group's attribute(in_order or timeout) is different from the server's
+                    # the consumer group's attribute(in_order or timeout) is different from the server's
                     if consumer_group is not None and (consumer_group.is_in_order() != loghub_config.in_order
                                                        or consumer_group.get_timeout() != loghub_config.heartbeat_interval):
                         raise LogHubClientWorkerException(
@@ -55,7 +53,7 @@ class ClientWorker(Thread):
         self.loghub_heart_beat = LoghubHeartBeat(self.loghub_client_adapter, loghub_config.heartbeat_interval)
 
     def switch_client(self, accessKeyId, accessKey, securityToken=None):
-        self.loghub_client_adapter.swith_client(self.loghub_config.endpoint, accessKeyId, accessKey, securityToken)
+        self.loghub_client_adapter.switch_client(self.loghub_config.endpoint, accessKeyId, accessKey, securityToken)
 
     def run(self):
         logging.debug('worker start')
@@ -69,7 +67,7 @@ class ClientWorker(Thread):
             try:
                 time.sleep(self.loghub_config.data_fetch_interval)
             except Exception as e:
-                print e
+                self.logger.error(e, exc_info=True)
 
     def clean_consumer(self, owned_shards):
         remove_shards = []
@@ -95,7 +93,7 @@ class ClientWorker(Thread):
         consumer = self.shard_consumer.get(shard_id, None)
         if consumer is not None:
             return consumer
-        consumer = LoghubConsuemr(self.loghub_client_adapter, shard_id, self.loghub_config.consumer_name,
+        consumer = LoghubConsumer(self.loghub_client_adapter, shard_id, self.loghub_config.consumer_name,
                                   self.loghub_processor_factory.generate_processor(),
                                   self.loghub_config.cursor_position, self.loghub_config.cursor_start_time)
         self.shard_consumer[shard_id] = consumer

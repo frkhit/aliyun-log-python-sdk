@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import logging
 import time
-import copy
 
 from concurrent.futures import ThreadPoolExecutor
 
-from aliyun.log.consumer.config import ConsumerStatus, LoghubCursorPosition
-from aliyun.log.consumer.loghub_client_adapter import LogHubClientAdapter
-from aliyun.log.consumer.loghub_checkpoint_tracker import LoghubCheckpointTracker
+from aliyun.log.consumer.config import ConsumerStatus
 from aliyun.log.consumer.fetched_log_group import FetchedLogGroup
-from aliyun.log.consumer.loghub_task import ProcessTaskResult, TaskResult, InitTaskResult
+from aliyun.log.consumer.loghub_checkpoint_tracker import LoghubCheckpointTracker
+from aliyun.log.consumer.loghub_task import ProcessTaskResult
 from aliyun.log.consumer.loghub_task import loghub_fetch_task, initialize_task, process_task, shutdown_task
 
+logger = logging.getLogger(__name__)
 
-class LoghubConsuemr(object):
 
+class LoghubConsumer(object):
     def __init__(self, loghub_client_adapter, shard_id, consumer_name, processor, cursor_position, cursor_start_time,
                  max_workers=2):
         self.loghub_client_adapter = loghub_client_adapter
@@ -26,13 +26,13 @@ class LoghubConsuemr(object):
         self.processor = processor
         self.check_point_tracker = LoghubCheckpointTracker(self.loghub_client_adapter, self.consumer_name,
                                                            self.shard_id)
-        self.excutor = ThreadPoolExecutor(max_workers=max_workers)
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.consumer_status = ConsumerStatus.INITIALIZING
         self.current_task_exist = False
         self.task_future = None
-        # self.task_future = self.excutor.submit(add, 1, 2)
+        # self.task_future = self.executor.submit(add, 1, 2)
         self.fetch_data_future = None
-        # self.fetch_data_future = self.excutor.submit()
+        # self.fetch_data_future = self.executor.submit()
 
         self.next_fetch_cursor = ''
         self.shutdown = False
@@ -41,13 +41,13 @@ class LoghubConsuemr(object):
         self.last_log_error_time = 0
         self.last_fetch_time = 0
         self.last_fetch_count = 0
-        # 在python pull logs responce 中未获取
+        # 在python pull logs response 中未获取
         # self.last_fetch_raw_size = 0
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
 
     def consume(self):
-        logging.debug('consumer start consuming')
+        self.logger.debug('consumer start consuming')
         self.check_and_generate_next_task()
         if self.consumer_status == ConsumerStatus.PROCESSING and self.last_fetch_log_group is None:
             self.fetch_data()
@@ -59,8 +59,7 @@ class LoghubConsuemr(object):
             try:
                 return task_future.result()
             except Exception, e:
-                import traceback
-                traceback.print_exc()
+                logger.error(e, exc_info=1)
         return None
 
     def fetch_data(self):
@@ -91,8 +90,8 @@ class LoghubConsuemr(object):
                 if is_generate_fetch_task:
                     self.last_fetch_time = time.time()
                     self.fetch_data_future = \
-                        self.excutor.submit(loghub_fetch_task,
-                                            self.loghub_client_adapter, self.shard_id, self.next_fetch_cursor)
+                        self.executor.submit(loghub_fetch_task,
+                                             self.loghub_client_adapter, self.shard_id, self.next_fetch_cursor)
                 else:
                     self.fetch_data_future = None
             else:
@@ -136,8 +135,8 @@ class LoghubConsuemr(object):
         #
         if self.consumer_status == ConsumerStatus.INITIALIZING:
             self.current_task_exist = True
-            self.task_future = self.excutor.submit(initialize_task, self.processor, self.loghub_client_adapter,
-                                                   self.shard_id, self.cursor_position, self.cursor_start_time)
+            self.task_future = self.executor.submit(initialize_task, self.processor, self.loghub_client_adapter,
+                                                    self.shard_id, self.cursor_position, self.cursor_start_time)
 
         elif self.consumer_status == ConsumerStatus.PROCESSING:
             if self.last_fetch_log_group is not None:
@@ -146,14 +145,14 @@ class LoghubConsuemr(object):
                 # 在这里需要深拷贝，在submit之前修改 self.last_fetch_log_group，但同时需将修改前的值作为submit的参数
                 last_fetch_log_group = copy.deepcopy(self.last_fetch_log_group)
                 self.last_fetch_log_group = None
-                self.task_future = self.excutor.submit(process_task, self.processor,
-                                                       last_fetch_log_group.get_fetched_log_group_list(),
-                                                       self.check_point_tracker)
+                self.task_future = self.executor.submit(process_task, self.processor,
+                                                        last_fetch_log_group.get_fetched_log_group_list(),
+                                                        self.check_point_tracker)
 
         elif self.consumer_status == ConsumerStatus.SHUTTING_DOWN:
             self.current_task_exist = True
             self.cancel_current_fetch()
-            self.task_future = self.excutor.submit(shutdown_task, self.processor, self.check_point_tracker)
+            self.task_future = self.executor.submit(shutdown_task, self.processor, self.check_point_tracker)
 
     def cancel_current_fetch(self):
         if self.fetch_data_future is not None:
@@ -165,20 +164,20 @@ class LoghubConsuemr(object):
         # 发生exception 记录
         current_time = time.time()
         if result is not None \
-            and result.get_exception() is not None \
+                and result.get_exception() is not None \
                 and current_time - self.last_log_error_time > 5:
             self.logger.warning(result.get_exception(), exc_info=True)
             self.last_log_error_time = current_time
 
-    def _update_status(self, task_succcess):
+    def _update_status(self, task_success):
 
         if self.consumer_status == ConsumerStatus.SHUTTING_DOWN:
-            if self.current_task_exist is False or task_succcess:
+            if self.current_task_exist is False or task_success:
                 self.consumer_status = ConsumerStatus.SHUTDOWN_COMPLETE
 
         elif self.shutdown:
             self.consumer_status = ConsumerStatus.SHUTTING_DOWN
-        elif task_succcess:
+        elif task_success:
             if self.consumer_status == ConsumerStatus.INITIALIZING:
                 self.consumer_status = ConsumerStatus.PROCESSING
 

@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class LoghubHeartBeat(Thread):
-
     def __init__(self, loghub_client_adapter, heartbeat_interval):
         super(LoghubHeartBeat, self).__init__()
         self.mloghub_client_adapter = loghub_client_adapter
@@ -30,7 +29,7 @@ class LoghubHeartBeat(Thread):
                 self.mheart_shards = self.mheld_shards[:]
                 time.sleep(self.heartbeat_interval)
             except Exception as e:
-                print e
+                logger.error(e, exc_info=1)
 
     def get_held_shards(self):
         return self.mheld_shards[:]

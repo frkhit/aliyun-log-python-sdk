@@ -17,7 +17,6 @@ class ConsumerStatus(Enum):
 
 
 class LoghubConfig(object):
-
     def __init__(self, endpoint, accessKeyId, accessKey, project, logstore,
                  consumer_group_name, consumer_name,
                  cursor_position, heartbeat_interval=20, data_fetch_interval=2, in_order=False,

@@ -16,7 +16,7 @@ class ConsumerGroupGetCheckPointRequest(ConsumerGroupRequest):
         else:
             return {}
 
-    def get_consuemr_group(self):
+    def get_consumer_group(self):
         return self.consumer_group
 
     def set_consumer_group(self, consumer_group):
