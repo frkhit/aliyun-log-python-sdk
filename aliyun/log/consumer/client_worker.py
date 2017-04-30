@@ -5,6 +5,7 @@ import logging
 import time
 from threading import Thread
 
+from aliyun.log.consumer.config import LoghubConfig
 from aliyun.log.consumer.loghub_client_adapter import LogHubClientAdapter
 from aliyun.log.consumer.loghub_consumer import LoghubConsumer
 from aliyun.log.consumer.loghub_exceptions.loghub_client_worker_exception import LogHubClientWorkerException
@@ -14,6 +15,9 @@ from aliyun.log.logexception import LogException
 
 class ClientWorker(Thread):
     def __init__(self, factory, loghub_config):
+        """
+        :type loghub_config: LoghubConfig
+        """
         super(ClientWorker, self).__init__()
         self.loghub_processor_factory = factory
         self.loghub_config = loghub_config
@@ -46,7 +50,7 @@ class ClientWorker(Thread):
 
             if consumer_group is not None:
                 if consumer_group.is_in_order() != self.loghub_config.in_order \
-                        or consumer_group.get_timeout() != self.loghub_config.heartbeat_interval:
+                        or consumer_group.get_timeout() != (self.loghub_config.heartbeat_interval * 2):
                     # the consumer group's attribute(in_order or timeout) is different from the server's
                     self._consumer_group_is_different(consumer_group=consumer_group)
                 else:
@@ -59,13 +63,13 @@ class ClientWorker(Thread):
         if self.loghub_config.can_update_consumer_group:
             self.logger.warn("consumer group " + self.loghub_config.consumer_group_name
                              + " is not agreed, AlreadyExistedConsumerGroup: (\"consumeInOrder\": "
-                             + str(self.loghub_config.in_order) + ", \"timeoutInSecond\": "
-                             + str(self.loghub_config.heartbeat_interval) + " )")
+                             + str(consumer_group.is_in_order()) + ", \"timeoutInSecond\": "
+                             + str(consumer_group.get_timeout()) + " )")
 
             self.logger.info("updating consumer group  (%s) ..." % self.loghub_config.consumer_group_name)
-            self.loghub_client_adapter.update_consumer_group(timeout=self.loghub_config.heartbeat_interval,
-                                                             in_order=self.loghub_config.in_order)
-            self.logger.info("updated consumer group  (%s) ..." % self.loghub_config.consumer_group_name)
+            self.loghub_client_adapter.update_consumer_group(in_order=self.loghub_config.in_order,
+                                                             timeout=(self.loghub_config.heartbeat_interval * 2))
+            self.logger.info("updated consumer group  (%s) !" % self.loghub_config.consumer_group_name)
         else:
             raise LogHubClientWorkerException(
                 "consumer group is not agreed, AlreadyExistedConsumerGroup: {\"consumeInOrder\": " +
