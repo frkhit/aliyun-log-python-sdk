@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import time
 
 from aliyun.log.consumer.loghub_exceptions.loghub_check_point_exception import LogHubCheckPointException
 from aliyun.log.logexception import LogException
+
+logger = logging.getLogger(__name__)
 
 
 class LoghubCheckpointTracker(object):
@@ -55,7 +58,7 @@ class LoghubCheckpointTracker(object):
             try:
                 self.flush_check_point()
             except LogHubCheckPointException, e:
-                print e
+                logger.error(e)
             self.last_check_time = current_time
 
     def get_check_point(self):
