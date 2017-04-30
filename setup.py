@@ -27,7 +27,7 @@ if float("%d.%d" % sys.version_info[:2]) < 2.6 or float("%d.%d" % sys.version_in
     sys.stderr.write("log service SDK requires Python version 2.6 and 2.7.\n")
     sys.exit(1)
 
-install_requires = []
+install_requires = ['protobuf', 'requests', 'enum', 'rwlock', 'futures']
 try:
     import json
 except ImportError:
@@ -38,7 +38,9 @@ except ImportError:
 
 packages = [
             'aliyun',
-            'aliyun.log'
+            'aliyun.log',
+            'aliyun.log.consumer',
+            'aliyun.log.consumer.loghub_exceptions'
             ]
 
 version = '0.6.4'

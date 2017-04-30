@@ -1,0 +1,9 @@
+appdirs==1.4.3
+enum==0.4.6
+futures==3.0.5
+packaging==16.8
+protobuf==3.2.0
+pyparsing==2.2.0
+requests==2.13.0
+rwlock==0.0.4
+six==1.10.0
