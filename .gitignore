@@ -1,0 +1,8 @@
+*.pyc
+*.png
+*.jpg
+*.log
+.idea/
+*.out
+build/
+
