@@ -30,7 +30,8 @@ class ClientWorker(Thread):
         self.shard_consumer = {}
 
         try:
-            self.loghub_client_adapter.create_consumer_group(loghub_config.heartbeat_interval, loghub_config.in_order)
+            self.loghub_client_adapter.create_consumer_group(loghub_config.heartbeat_interval * 2,
+                                                             loghub_config.in_order)
         except LogException as e:
             # consumer group already exist
             if e.get_error_code() == 'ConsumerGroupAlreadyExist':
