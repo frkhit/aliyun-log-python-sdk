@@ -4,7 +4,6 @@ import json
 
 
 class ConsumerGroup(object):
-
     def __init__(self, consumer_group_name, timeout, in_order=False):
         self.consumer_group_name = consumer_group_name
         self.timeout = timeout
@@ -38,4 +37,6 @@ class ConsumerGroup(object):
         return json.dumps(log_store_dict)
 
     def to_string(self):
-        return "ConsumerGroup [consumerGroupName=" + self.consumer_group_name + ", timeout=" + self.timeout + ", inOrder=" + self.in_order + "]"
+        return "ConsumerGroup [consumerGroupName=" + self.consumer_group_name \
+               + ", timeout=" + self.timeout \
+               + ", inOrder=" + str(self.in_order) + "]"

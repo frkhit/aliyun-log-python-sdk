@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 
 
-import time
 import logging
+import time
 from threading import Thread
 
-from aliyun.log.logexception import LogException
-
-from aliyun.log.consumer.loghub_consumer import LoghubConsuemr
 from aliyun.log.consumer.loghub_client_adapter import LogHubClientAdapter
-from aliyun.log.consumer.loghub_heart_beat import LoghubHeartBeat
+from aliyun.log.consumer.loghub_consumer import LoghubConsuemr
 from aliyun.log.consumer.loghub_exceptions.loghub_client_worker_exception import LogHubClientWorkerException
+from aliyun.log.consumer.loghub_heart_beat import LoghubHeartBeat
+from aliyun.log.logexception import LogException
 
 
 class ClientWorker(Thread):
-
     def __init__(self, factory, loghub_config):
         super(ClientWorker, self).__init__()
         self.loghub_processor_factory = factory
@@ -42,10 +40,10 @@ class ClientWorker(Thread):
                     # the consuemr group's attribute(in_order or timeout) is different from the server's
                     if consumer_group is not None and (consumer_group.is_in_order() != loghub_config.in_order
                                                        or consumer_group.get_timeout() != loghub_config.heartbeat_interval):
-                            raise LogHubClientWorkerException(
-                                "consumer group is not agreed, AlreadyExistedConsumerGroup: {\"consumeInOrder\": " +
-                                str(consumer_group.is_in_order()) + ", \"timeoutInMillSecond\": " +
-                                str(consumer_group.get_timeout()) + "}")
+                        raise LogHubClientWorkerException(
+                            "consumer group is not agreed, AlreadyExistedConsumerGroup: {\"consumeInOrder\": " +
+                            str(consumer_group.is_in_order()) + ", \"timeoutInMillSecond\": " +
+                            str(consumer_group.get_timeout()) + "}")
                 except LogException as e1:
                     raise LogHubClientWorkerException("error occour when get consumer group, errorCode: " +
                                                       e1.get_error_code() + ", errorMessage: " + e1.get_error_message())
@@ -102,8 +100,3 @@ class ClientWorker(Thread):
                                   self.loghub_config.cursor_position, self.loghub_config.cursor_start_time)
         self.shard_consumer[shard_id] = consumer
         return consumer
-
-
-
-
-

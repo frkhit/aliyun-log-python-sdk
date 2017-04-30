@@ -2,17 +2,13 @@
 
 import logging
 
-from aliyun.log.log_logs_pb2 import LogGroup
-from aliyun.log.log_logs_pb2 import LogGroupList
-from aliyun.log.logexception import LogException
-
 from aliyun.log.consumer.config import LoghubCursorPosition
+from aliyun.log.logexception import LogException
 
 logger = logging.getLogger(__name__)
 
 
 class LoghubProcessorBase(object):
-
     def initialize(self, shard):
         raise NotImplementedError('not initialize shard')
 
@@ -24,13 +20,11 @@ class LoghubProcessorBase(object):
 
 
 class LoghubProcessorFactory(object):
-
     def generate_processor(self):
         raise NotImplementedError('not implement method generate_process')
 
 
 class TaskResult(object):
-
     def __init__(self, task_exception):
         self.task_exception = task_exception
 
@@ -39,7 +33,6 @@ class TaskResult(object):
 
 
 class ProcessTaskResult(TaskResult):
-
     def __init__(self, rollback_check_point):
         super(ProcessTaskResult, self).__init__(None)
         self.rollback_check_point = rollback_check_point
@@ -49,7 +42,6 @@ class ProcessTaskResult(TaskResult):
 
 
 class InitTaskResult(TaskResult):
-
     def __init__(self, cursor, cursor_persistent):
         super(InitTaskResult, self).__init__(None)
         self.cursor = cursor
@@ -63,7 +55,6 @@ class InitTaskResult(TaskResult):
 
 
 class FetchTaskResult(TaskResult):
-
     def __init__(self, fetched_log_group_list, cursor):
         super(FetchTaskResult, self).__init__(None)
         self.fetched_log_group_list = fetched_log_group_list
@@ -113,7 +104,6 @@ def initialize_task(processor, loghub_client_adapter, shard_id, cursor_position,
 
 # 这里每次抓取的loggroup数量写的是固定数，
 def loghub_fetch_task(loghub_client_adapter, shard_id, cursor):
-
     max_fetch_log_group_size = 1000
     exception = None
 
@@ -136,7 +126,7 @@ def loghub_fetch_task(loghub_client_adapter, shard_id, cursor):
 
         # only retry if the first request get "SLSInvalidCursor" exception
         if retry_times == 0 and isinstance(exception, LogException) \
-            and 'invalidcursor' in exception.get_error_code().lower():
+                and 'invalidcursor' in exception.get_error_code().lower():
             try:
                 cursor = loghub_client_adapter.get_end_cursor(shard_id)
             except Exception, e:
@@ -163,6 +153,3 @@ def shutdown_task(processor, check_point_tracker):
         logger.error('Failed to flush check point', exc_info=True)
 
     return TaskResult(exception)
-
-
-

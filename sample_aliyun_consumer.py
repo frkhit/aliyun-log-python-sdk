@@ -2,16 +2,14 @@
 
 import time
 
-from aliyun.log.consumer.loghub_task import LoghubProcessorBase, LoghubProcessorFactory
 from aliyun.log.consumer.client_worker import ClientWorker
 from aliyun.log.consumer.config import LoghubConfig
 from aliyun.log.consumer.config import LoghubCursorPosition
 from aliyun.log.consumer.consumer_group_client import LogConsumerClient
+from aliyun.log.consumer.loghub_task import LoghubProcessorBase, LoghubProcessorFactory
 
 
-
-class SampleConsuemr(LoghubProcessorBase):
-
+class SampleConsumer(LoghubProcessorBase):
     shard_id = -1
     last_check_time = 0
 
@@ -57,18 +55,16 @@ class SampleConsuemr(LoghubProcessorBase):
 
 
 class SampleLoghubFactory(LoghubProcessorFactory):
-
     def generate_processor(self):
-        return SampleConsuemr()
+        return SampleConsumer()
 
 
 endpoint = ''  # 选择与上面步骤创建Project所属区域匹配的Endpoint
-accessKeyId = ''         # 使用你的阿里云访问秘钥AccessKeyId
-accessKey = ''              # 使用你的阿里云访问秘钥AccessKeySecret
-project = 'score-rule-test'                  # 上面步骤创建的项目名称
-logstore = 'score-test1'                 # 上面步骤创建的日志库名称
+accessKeyId = ''  # 使用你的阿里云访问秘钥AccessKeyId
+accessKey = ''  # 使用你的阿里云访问秘钥AccessKeySecret
+project = 'score-rule-test'  # 上面步骤创建的项目名称
+logstore = 'score-test1'  # 上面步骤创建的日志库名称
 client = LogConsumerClient(endpoint, accessKeyId, accessKey)
-
 
 loghub_config = LoghubConfig(endpoint, accessKeyId, accessKey, project, logstore, 'consumergroup',
                              'consumer_1', cursor_position=LoghubCursorPosition.BEGIN_CURSOR, heartbeat_interval=20,
