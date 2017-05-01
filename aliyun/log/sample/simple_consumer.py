@@ -3,8 +3,6 @@ import logging
 import time
 from Queue import Queue
 
-from aliyun_loghub_tools.loghub import aliyun_config
-
 from aliyun.log.consumer.client_worker import ClientWorker
 from aliyun.log.consumer.config import LoghubConfig, LoghubCursorPosition
 from aliyun.log.consumer.loghub_checkpoint_tracker import LoghubCheckpointTracker
@@ -13,8 +11,6 @@ from aliyun.log.sample.simple_utils import create_guid, json2pyobj, get_log_key
 from message import Message
 
 logger = logging.getLogger(__name__)
-
-LOG_QUEUE = Queue(10)
 
 
 class SampleConsumer(LoghubProcessorBase):
@@ -26,6 +22,7 @@ class SampleConsumer(LoghubProcessorBase):
         """
         :type log_queue: Queue
         """
+        super(SampleConsumer, self).__init__()
         assert log_queue is not None
         self._log_queue = log_queue
 
@@ -67,28 +64,35 @@ class SampleConsumer(LoghubProcessorBase):
 
 
 class SampleLoghubFactory(LoghubProcessorFactory):
+    def __init__(self, log_queue):
+        super(SampleLoghubFactory, self).__init__()
+        self._log_queue = log_queue
+
     def generate_processor(self):
-        return SampleConsumer(LOG_QUEUE)
+        return SampleConsumer(self._log_queue)
 
 
 class SimpleCorLoghubConsumer(object):
-    def __init__(self, logstore, project, group="sss1", consumer_name=create_guid(),
-                 heartbeat_interval_in_second=3, cursor_position=LoghubCursorPosition.BEGIN_CURSOR,
-                 log_queue=LOG_QUEUE):
-        loghub_config = LoghubConfig(aliyun_config.loghub_endpoint, aliyun_config.loghub_accessKeyId,
-                                     aliyun_config.loghub_accessKey, project, logstore, group,
-                                     consumer_name, cursor_position=cursor_position,
-                                     heartbeat_interval=heartbeat_interval_in_second, data_fetch_interval=1,
-                                     can_update_consumer_group=True)
+    def __init__(self, logstore, project, endpoint, access_key_id, access_key, group="sss1",
+                 consumer_name=create_guid(), heartbeat_interval_in_second=10, data_fetch_interval_in_second=1,
+                 cursor_position=LoghubCursorPosition.BEGIN_CURSOR, log_queue=None,
+                 can_update_consumer_group=False):
 
-        sample_loghub_factory = SampleLoghubFactory()
+        loghub_config = LoghubConfig(endpoint, access_key_id,
+                                     access_key, project, logstore, group,
+                                     consumer_name, cursor_position=cursor_position,
+                                     heartbeat_interval=heartbeat_interval_in_second,
+                                     data_fetch_interval=data_fetch_interval_in_second,
+                                     can_update_consumer_group=can_update_consumer_group)
+
+        self.log_queue = log_queue or Queue(10)
+        sample_loghub_factory = SampleLoghubFactory(self.log_queue)
         client_worker = ClientWorker(sample_loghub_factory, loghub_config=loghub_config)
         client_worker.setDaemon(True)
         client_worker.start()
 
         self._iterator = self._message_generator()
         self._closed = False
-        self.log_queue = log_queue
 
     def __iter__(self):
         return self
