@@ -7,7 +7,7 @@ from aliyun.log.logclient import LogClient
 from aliyun.log.logexception import LogException
 from aliyun.log.logitem import LogItem
 from aliyun.log.putlogsrequest import PutLogsRequest
-from aliyun.log.sample.loghub_utils import pyobj2json, get_log_key
+from aliyun.log.sample.simple_utils import pyobj2json, get_log_key
 
 logger = logging.getLogger(__name__)
 

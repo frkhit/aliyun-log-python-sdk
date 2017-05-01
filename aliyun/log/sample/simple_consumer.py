@@ -9,7 +9,7 @@ from aliyun.log.consumer.client_worker import ClientWorker
 from aliyun.log.consumer.config import LoghubConfig, LoghubCursorPosition
 from aliyun.log.consumer.loghub_checkpoint_tracker import LoghubCheckpointTracker
 from aliyun.log.consumer.loghub_task import LoghubProcessorBase, LoghubProcessorFactory
-from aliyun.log.sample.loghub_utils import create_guid, json2pyobj, get_log_key
+from aliyun.log.sample.simple_utils import create_guid, json2pyobj, get_log_key
 from message import Message
 
 logger = logging.getLogger(__name__)
