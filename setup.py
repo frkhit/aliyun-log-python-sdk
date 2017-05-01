@@ -17,6 +17,7 @@ http://pypi.python.org/pypi/simplejson/
 """
 
 import sys
+
 try:
     from setuptools import setup
 except ImportError:
@@ -37,29 +38,29 @@ except ImportError:
         install_requires.append('simplejson')
 
 packages = [
-            'aliyun',
-            'aliyun.log',
-            'aliyun.log.consumer',
-            'aliyun.log.consumer.loghub_exceptions'
-            ]
+    'aliyun',
+    'aliyun.log',
+    'aliyun.log.consumer',
+    'aliyun.log.consumer.loghub_exceptions',
+    'aliyun.log.sample',
+]
 
-version = '0.6.4'
+version = '0.6.4.1'
 
 classifiers = [
-            'Development Status :: 5 - Production/Stable',
-            'Programming Language :: Python :: 2.6',
-            'Programming Language :: Python :: 2.7',
-            'License :: Copyright (C) Alibaba Cloud Computing. All rights reserved.'
-            ]
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
+    'License :: Copyright (C) Alibaba Cloud Computing. All rights reserved.'
+]
 
 setup(
-      name='LogService',
-      version=version,
-      description='log service Python client SDK',
-      author='sls_dev',
-      url='http://www.aliyun.com/product/sls',
-      install_requires=install_requires,
-      packages=packages,
-      classifiers=classifiers
-     )
-
+    name='LogService',
+    version=version,
+    description='log service Python client SDK',
+    author='sls_dev',
+    url='http://www.aliyun.com/product/sls',
+    install_requires=install_requires,
+    packages=packages,
+    classifiers=classifiers
+)
